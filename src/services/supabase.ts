@@ -1,6 +1,5 @@
 
 import { createClient } from '@supabase/supabase-js';
-import { useToast } from '@/hooks/use-toast';
 
 // Initialize Supabase client with your project URL and service role key
 const supabaseUrl = 'https://zvyldmazpktevdxeaavq.supabase.co';
@@ -14,6 +13,16 @@ interface User {
   name: string;
   role: 'standard' | 'pro' | 'free_access';
   avatarUrl?: string;
+}
+
+interface Subscription {
+  id: string;
+  userId: string;
+  plan: 'standard' | 'pro';
+  status: 'active' | 'canceled' | 'expired';
+  startDate: Date;
+  endDate: Date;
+  autoRenew: boolean;
 }
 
 export const authenticateUser = async (email: string, password: string): Promise<User | null> => {
@@ -152,4 +161,128 @@ export const getUserQueries = async (userId: string): Promise<Array<{query: stri
     console.error('Error getting user queries:', error);
     return [];
   }
+};
+
+// New functions for subscription management
+
+export const getUserSubscription = async (userId: string): Promise<Subscription | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .single();
+
+    if (error) throw error;
+    
+    if (!data) return null;
+    
+    return {
+      id: data.id,
+      userId: data.user_id,
+      plan: data.plan,
+      status: data.status,
+      startDate: new Date(data.start_date),
+      endDate: new Date(data.end_date),
+      autoRenew: data.auto_renew,
+    };
+  } catch (error) {
+    console.error('Error getting user subscription:', error);
+    return null;
+  }
+};
+
+export const createOrUpdateSubscription = async (
+  userId: string, 
+  plan: 'standard' | 'pro',
+  startDate: Date,
+  endDate: Date,
+  autoRenew: boolean = true
+): Promise<boolean> => {
+  try {
+    // First check if user already has an active subscription
+    const existingSubscription = await getUserSubscription(userId);
+    
+    if (existingSubscription) {
+      // Update existing subscription
+      const { error } = await supabase
+        .from('subscriptions')
+        .update({
+          plan,
+          status: 'active',
+          start_date: startDate.toISOString(),
+          end_date: endDate.toISOString(),
+          auto_renew: autoRenew,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingSubscription.id);
+        
+      if (error) throw error;
+    } else {
+      // Create new subscription
+      const { error } = await supabase
+        .from('subscriptions')
+        .insert([{
+          user_id: userId,
+          plan,
+          status: 'active',
+          start_date: startDate.toISOString(),
+          end_date: endDate.toISOString(),
+          auto_renew: autoRenew,
+          created_at: new Date().toISOString()
+        }]);
+        
+      if (error) throw error;
+    }
+    
+    // Update user role based on subscription
+    await updateUserRole(userId, plan);
+    
+    return true;
+  } catch (error) {
+    console.error('Error creating/updating subscription:', error);
+    return false;
+  }
+};
+
+export const cancelSubscription = async (userId: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('subscriptions')
+      .update({ 
+        status: 'canceled',
+        auto_renew: false,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', userId)
+      .eq('status', 'active');
+      
+    if (error) throw error;
+    
+    return true;
+  } catch (error) {
+    console.error('Error canceling subscription:', error);
+    return false;
+  }
+};
+
+export const updateUserRole = async (userId: string, role: 'standard' | 'pro' | 'free_access'): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ role })
+      .eq('id', userId);
+      
+    if (error) throw error;
+    
+    return true;
+  } catch (error) {
+    console.error('Error updating user role:', error);
+    return false;
+  }
+};
+
+export const setFreeAccessForUser = async (userId: string): Promise<boolean> => {
+  return updateUserRole(userId, 'free_access');
 };

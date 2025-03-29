@@ -1,9 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Check, Sparkles } from 'lucide-react';
+import { Check, Sparkles, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useToast } from "@/hooks/use-toast";
+import { getUserSubscription, createOrUpdateSubscription } from '@/services/supabase';
 
 type BillingInterval = 'monthly' | 'yearly';
 
@@ -59,6 +61,124 @@ const plans: Plan[] = [
 
 export const SubscriptionPanel: React.FC = () => {
   const [billingInterval, setBillingInterval] = useState<BillingInterval>('monthly');
+  const [currentSubscription, setCurrentSubscription] = useState<{
+    plan: 'standard' | 'pro' | null;
+    endDate: Date | null;
+    isLoading: boolean;
+  }>({
+    plan: null,
+    endDate: null,
+    isLoading: true
+  });
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { toast } = useToast();
+  
+  useEffect(() => {
+    const loadUserSubscription = async () => {
+      try {
+        const userId = getUserIdFromLocalStorage();
+        
+        if (!userId) {
+          setCurrentSubscription(prev => ({ ...prev, isLoading: false }));
+          return;
+        }
+        
+        const subscription = await getUserSubscription(userId);
+        
+        if (subscription) {
+          setCurrentSubscription({
+            plan: subscription.plan,
+            endDate: subscription.endDate,
+            isLoading: false
+          });
+        } else {
+          setCurrentSubscription({
+            plan: null,
+            endDate: null,
+            isLoading: false
+          });
+        }
+      } catch (error) {
+        console.error('Error loading subscription:', error);
+        setCurrentSubscription(prev => ({ ...prev, isLoading: false }));
+      }
+    };
+    
+    loadUserSubscription();
+  }, []);
+  
+  const getUserIdFromLocalStorage = (): string | null => {
+    try {
+      const userData = localStorage.getItem('user');
+      if (!userData) return null;
+      
+      const user = JSON.parse(userData);
+      return user.id || null;
+    } catch (e) {
+      console.error('Error getting user ID from localStorage:', e);
+      return null;
+    }
+  };
+  
+  const handleSubscribe = async (planName: string) => {
+    const userId = getUserIdFromLocalStorage();
+    
+    if (!userId) {
+      toast({
+        title: "Необхідно увійти",
+        description: "Будь ласка, увійдіть в свій обліковий запис, щоб підписатися",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsProcessing(true);
+    
+    try {
+      const plan = planName.toLowerCase() === 'про' ? 'pro' : 'standard';
+      const startDate = new Date();
+      const endDate = new Date();
+      
+      // Set end date based on billing interval
+      if (billingInterval === 'monthly') {
+        endDate.setMonth(endDate.getMonth() + 1);
+      } else {
+        endDate.setFullYear(endDate.getFullYear() + 1);
+      }
+      
+      const result = await createOrUpdateSubscription(
+        userId,
+        plan as 'standard' | 'pro',
+        startDate,
+        endDate,
+        true
+      );
+      
+      if (result) {
+        toast({
+          title: "Підписка оформлена",
+          description: `Ви успішно підписалися на план ${planName}`,
+        });
+        
+        setCurrentSubscription({
+          plan: plan as 'standard' | 'pro',
+          endDate: endDate,
+          isLoading: false
+        });
+      } else {
+        throw new Error("Помилка при оформленні підписки");
+      }
+    } catch (error) {
+      console.error('Subscription error:', error);
+      toast({
+        title: "Помилка",
+        description: "Не вдалося оформити підписку. Спробуйте ще раз пізніше.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   return (
     <div className="container max-w-6xl py-8">
@@ -87,6 +207,23 @@ export const SubscriptionPanel: React.FC = () => {
             </span>
           </Button>
         </div>
+        
+        {currentSubscription.isLoading && (
+          <div className="flex justify-center mt-4">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          </div>
+        )}
+        
+        {!currentSubscription.isLoading && currentSubscription.plan && (
+          <div className="mt-4 p-3 bg-primary/10 rounded-md inline-block">
+            <p className="text-sm">
+              Ваша поточна підписка: <strong>{currentSubscription.plan === 'pro' ? 'Про' : 'Стандарт'}</strong>
+              {currentSubscription.endDate && (
+                <span> (дійсна до {currentSubscription.endDate.toLocaleDateString()})</span>
+              )}
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
@@ -140,8 +277,19 @@ export const SubscriptionPanel: React.FC = () => {
               <Button
                 className="w-full"
                 variant={plan.highlight ? "default" : "outline"}
+                onClick={() => handleSubscribe(plan.name)}
+                disabled={isProcessing || (currentSubscription.plan === (plan.name.toLowerCase() === 'про' ? 'pro' : 'standard'))}
               >
-                {plan.price.monthly === 0 ? "Почати" : "Підписатися"}
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Обробка...
+                  </>
+                ) : currentSubscription.plan === (plan.name.toLowerCase() === 'про' ? 'pro' : 'standard') ? (
+                  'Поточний план'
+                ) : (
+                  'Підписатися'
+                )}
               </Button>
             </CardFooter>
           </Card>

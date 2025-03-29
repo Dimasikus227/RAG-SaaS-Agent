@@ -19,8 +19,8 @@ interface N8nResponse {
   error?: string;
 }
 
-// n8n workflow URL
-const N8N_WORKFLOW_URL = 'https://hudii.app.n8n.cloud/workflow/VBiytosTK2bOPzNK';
+// n8n webhook URL - Updated
+const N8N_WEBHOOK_URL = 'https://hudii.app.n8n.cloud/webhook-test/4efc0770-91b6-4e97-9847-8f40d67e31d8';
 
 interface ChatInterfaceProps {
   userId?: string;
@@ -45,7 +45,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userId }) => {
     try {
       console.log('Sending to n8n:', userQuery);
       
-      const response = await fetch(N8N_WORKFLOW_URL, {
+      const response = await fetch(N8N_WEBHOOK_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
