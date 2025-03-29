@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { ChatInterface } from '@/components/ChatInterface';
 import { SubscriptionPanel } from '@/components/SubscriptionPanel';
@@ -7,16 +7,39 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MessageSquare, CreditCard } from 'lucide-react';
 
 const Index = () => {
-  // This would come from your authentication state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const user = {
-    name: 'Іван Петренко',
-    avatarUrl: '',
-  };
+  const [user, setUser] = useState<{
+    id: string;
+    name: string;
+    email: string;
+    role: 'standard' | 'pro' | 'free_access';
+    avatarUrl?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    // Check if user is logged in
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+        setIsLoggedIn(true);
+      } catch (e) {
+        console.error('Error parsing stored user:', e);
+        localStorage.removeItem('user');
+      }
+    }
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar isLoggedIn={isLoggedIn} user={user} />
+      <Navbar 
+        isLoggedIn={isLoggedIn} 
+        user={user ? {
+          name: user.name,
+          avatarUrl: user.avatarUrl || '',
+        } : undefined} 
+      />
       
       <main className="flex-1 mt-16 pb-4">
         <div className="container mx-auto max-w-7xl h-full">
@@ -35,7 +58,7 @@ const Index = () => {
             </div>
             
             <TabsContent value="chat" className="h-[calc(100vh-136px)]">
-              <ChatInterface />
+              <ChatInterface userId={user?.id} />
             </TabsContent>
             
             <TabsContent value="subscribe">

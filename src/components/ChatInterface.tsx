@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { SendHorizonal, Bot, User, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { saveUserQuery } from '@/services/supabase';
 
 interface Message {
   id: string;
@@ -18,10 +19,14 @@ interface N8nResponse {
   error?: string;
 }
 
-// This would come from environment variables in a real app
-const N8N_WORKFLOW_URL = 'YOUR_N8N_WORKFLOW_URL';
+// n8n workflow URL
+const N8N_WORKFLOW_URL = 'https://hudii.app.n8n.cloud/workflow/VBiytosTK2bOPzNK';
 
-export const ChatInterface: React.FC = () => {
+interface ChatInterfaceProps {
+  userId?: string;
+}
+
+export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userId }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -38,19 +43,8 @@ export const ChatInterface: React.FC = () => {
 
   const sendToN8n = async (userQuery: string): Promise<string> => {
     try {
-      // In a real app, you'd make a proper API request to your n8n workflow
-      // For now, we'll simulate a response
       console.log('Sending to n8n:', userQuery);
       
-      // Simulate API call
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          resolve(`Ось відповідь на ваш запит про "${userQuery}" з моєї бази даних. Я AI Curator і допомагаю знаходити потрібну інформацію.`);
-        }, 1500);
-      });
-      
-      // In production, you'd use something like this:
-      /*
       const response = await fetch(N8N_WORKFLOW_URL, {
         method: 'POST',
         headers: {
@@ -60,7 +54,7 @@ export const ChatInterface: React.FC = () => {
       });
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`HTTP помилка! статус: ${response.status}`);
       }
       
       const data: N8nResponse = await response.json();
@@ -69,11 +63,10 @@ export const ChatInterface: React.FC = () => {
         throw new Error(data.error);
       }
       
-      return data.message;
-      */
+      return data.message || 'Нема відповіді від сервера.';
     } catch (error) {
       console.error('Error calling n8n workflow:', error);
-      throw error;
+      return `Сталася помилка під час обробки вашого запиту: ${error instanceof Error ? error.message : 'Невідома помилка'}`;
     }
   };
 
@@ -104,6 +97,11 @@ export const ChatInterface: React.FC = () => {
       };
       
       setMessages(prev => [...prev, assistantMessage]);
+      
+      // Save the query to Supabase if a user is logged in
+      if (userId) {
+        await saveUserQuery(userId, userMessage.content, n8nResponse);
+      }
     } catch (error) {
       console.error('Error:', error);
       toast({

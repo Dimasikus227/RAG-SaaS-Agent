@@ -1,9 +1,12 @@
 
-// This is a placeholder for actual Supabase integration
-// In a real application, you would initialize the Supabase client here
-// And create functions to interact with the database
-
+import { createClient } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
+
+// Initialize Supabase client with your project URL and service role key
+const supabaseUrl = 'https://zvyldmazpktevdxeaavq.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp2eWxkbWF6cGt0ZXZkeGVhYXZxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MjgyNTcxNCwiZXhwIjoyMDU4NDAxNzE0fQ.TF20bNN5S0ChNB-KdcUPFkjUIaQ97e3whaxI3TUBftw';
+
+export const supabase = createClient(supabaseUrl, supabaseKey);
 
 interface User {
   id: string;
@@ -13,77 +16,140 @@ interface User {
   avatarUrl?: string;
 }
 
-// Placeholder for Supabase authentication and database calls
 export const authenticateUser = async (email: string, password: string): Promise<User | null> => {
-  // In a real app, you would use Supabase auth
-  console.log('Authenticating user:', email);
-  
-  // Simulate successful authentication for demo purposes
-  if (email && password) {
-    // Simulate a user with free access
-    if (email === 'free@example.com') {
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) throw error;
+
+    if (data.user) {
+      // Get user profile information
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('name, role, avatar_url')
+        .eq('id', data.user.id)
+        .single();
+
+      if (profileError) throw profileError;
+
+      // Check if this is a special free_access user (email@example.com or manually set in profile)
+      const userRole = profileData?.role || 'standard';
+      
       return {
-        id: '123',
-        email,
-        name: 'Безкоштовний користувач',
-        role: 'free_access',
+        id: data.user.id,
+        email: data.user.email || '',
+        name: profileData?.name || 'Користувач',
+        role: userRole as 'standard' | 'pro' | 'free_access',
+        avatarUrl: profileData?.avatar_url,
       };
     }
     
-    return {
-      id: '123',
-      email,
-      name: 'Тестовий користувач',
-      role: 'standard',
-    };
+    return null;
+  } catch (error) {
+    console.error('Authentication error:', error);
+    return null;
   }
-  
-  return null;
 };
 
 export const registerUser = async (name: string, email: string, password: string): Promise<User | null> => {
-  // In a real app, you would use Supabase auth to register a user
-  console.log('Registering user:', email);
-  
-  // Simulate successful registration
-  if (name && email && password) {
-    return {
-      id: '123',
+  try {
+    const { data, error } = await supabase.auth.signUp({
       email,
-      name,
-      role: 'standard',
-    };
+      password,
+    });
+
+    if (error) throw error;
+
+    if (data.user) {
+      // Create a profile for the new user
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert([
+          { 
+            id: data.user.id, 
+            name, 
+            email,
+            role: 'standard',
+            created_at: new Date(),
+          }
+        ]);
+
+      if (profileError) throw profileError;
+
+      return {
+        id: data.user.id,
+        email: data.user.email || '',
+        name,
+        role: 'standard',
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Registration error:', error);
+    return null;
   }
-  
-  return null;
 };
 
 export const getUserRole = async (userId: string): Promise<'standard' | 'pro' | 'free_access'> => {
-  // In a real app, you would query Supabase for the user's role
-  console.log('Getting user role for:', userId);
-  
-  // Simulate a response
-  return 'standard';
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .single();
+
+    if (error) throw error;
+    
+    return (data?.role as 'standard' | 'pro' | 'free_access') || 'standard';
+  } catch (error) {
+    console.error('Error getting user role:', error);
+    return 'standard';
+  }
 };
 
 export const saveUserQuery = async (userId: string, query: string, response: string): Promise<boolean> => {
-  // In a real app, you would save the query to Supabase
-  console.log('Saving query for user:', userId, query, response);
-  
-  // Simulate successful save
-  return true;
+  try {
+    const { error } = await supabase
+      .from('queries')
+      .insert([
+        { 
+          user_id: userId, 
+          query, 
+          response,
+          created_at: new Date()
+        }
+      ]);
+
+    if (error) throw error;
+    
+    return true;
+  } catch (error) {
+    console.error('Error saving query:', error);
+    return false;
+  }
 };
 
 export const getUserQueries = async (userId: string): Promise<Array<{query: string, response: string, timestamp: Date}>> => {
-  // In a real app, you would query Supabase for the user's queries
-  console.log('Getting queries for user:', userId);
-  
-  // Simulate a response
-  return [
-    {
-      query: 'Що таке RAG?',
-      response: 'RAG (Retrieval-Augmented Generation) - це технологія, яка поєднує пошук інформації з генеративними моделями для створення більш точних відповідей.',
-      timestamp: new Date(),
-    }
-  ];
+  try {
+    const { data, error } = await supabase
+      .from('queries')
+      .select('query, response, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    
+    return data.map(item => ({
+      query: item.query,
+      response: item.response,
+      timestamp: new Date(item.created_at)
+    }));
+  } catch (error) {
+    console.error('Error getting user queries:', error);
+    return [];
+  }
 };

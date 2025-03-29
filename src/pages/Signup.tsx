@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from "@/components/ui/label";
 import { Logo } from '@/components/Logo';
 import { useToast } from '@/hooks/use-toast';
+import { registerUser } from '@/services/supabase';
 
 const Signup = () => {
   const [name, setName] = useState('');
@@ -20,15 +21,34 @@ const Signup = () => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate signup
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      const user = await registerUser(name, email, password);
+      
+      if (user) {
+        toast({
+          title: "Обліковий запис створено",
+          description: "Ласкаво просимо до AI Curator! Ваш обліковий запис було успішно створено.",
+        });
+        
+        // Navigate to login instead of auto-login to comply with email verification if enabled
+        navigate('/login');
+      } else {
+        toast({
+          title: "Помилка реєстрації",
+          description: "Не вдалося створити обліковий запис. Можливо, цей email вже використовується.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
       toast({
-        title: "Обліковий запис створено",
-        description: "Ласкаво просимо до AI Curator! Ваш обліковий запис було успішно створено.",
+        title: "Помилка реєстрації",
+        description: "Сталася помилка під час створення облікового запису. Спробуйте пізніше.",
+        variant: "destructive",
       });
-      navigate('/');
-    }, 1000);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

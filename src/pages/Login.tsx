@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from "@/components/ui/label";
 import { Logo } from '@/components/Logo';
 import { useToast } from '@/hooks/use-toast';
+import { authenticateUser } from '@/services/supabase';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -19,15 +20,36 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate login
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      const user = await authenticateUser(email, password);
+      
+      if (user) {
+        // Store user info in localStorage for session management
+        localStorage.setItem('user', JSON.stringify(user));
+        
+        toast({
+          title: "Вхід успішний",
+          description: "Ласкаво просимо до AI Curator!",
+        });
+        
+        navigate('/');
+      } else {
+        toast({
+          title: "Помилка входу",
+          description: "Невірний email або пароль. Спробуйте ще раз.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Login error:', error);
       toast({
-        title: "Вхід успішний",
-        description: "Ласкаво просимо до AI Curator!",
+        title: "Помилка входу",
+        description: "Сталася помилка під час входу. Спробуйте пізніше.",
+        variant: "destructive",
       });
-      navigate('/');
-    }, 1000);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
