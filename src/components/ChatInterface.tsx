@@ -14,12 +14,14 @@ interface Message {
   timestamp: Date;
 }
 
+// Updated interface to match the actual response format from n8n
 interface N8nResponse {
-  message: string;
+  output?: string;
+  message?: string;
   error?: string;
 }
 
-// n8n webhook URL - Updated
+// n8n webhook URL
 const N8N_WEBHOOK_URL = 'https://hudii.app.n8n.cloud/webhook-test/4efc0770-91b6-4e97-9847-8f40d67e31d8';
 
 interface ChatInterfaceProps {
@@ -57,13 +59,33 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userId }) => {
         throw new Error(`HTTP помилка! статус: ${response.status}`);
       }
       
-      const data: N8nResponse = await response.json();
+      // Get the response text first to check what we're dealing with
+      const responseText = await response.text();
+      console.log('Raw response from n8n:', responseText);
       
-      if (data.error) {
-        throw new Error(data.error);
+      let responseData: N8nResponse;
+      
+      try {
+        // Try to parse as JSON
+        responseData = JSON.parse(responseText);
+      } catch (e) {
+        // If it's not valid JSON, use the raw text as the message
+        console.log('Response is not valid JSON, using as raw text');
+        return responseText;
       }
       
-      return data.message || 'Нема відповіді від сервера.';
+      // Check all possible response formats
+      if (responseData.output) {
+        return responseData.output;
+      } else if (responseData.message) {
+        return responseData.message;
+      } else if (responseData.error) {
+        throw new Error(responseData.error);
+      } else if (typeof responseData === 'string') {
+        return responseData;
+      }
+      
+      return 'Нема відповіді від сервера.';
     } catch (error) {
       console.error('Error calling n8n workflow:', error);
       return `Сталася помилка під час обробки вашого запиту: ${error instanceof Error ? error.message : 'Невідома помилка'}`;
