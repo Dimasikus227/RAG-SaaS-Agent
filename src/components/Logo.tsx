@@ -7,7 +7,7 @@ export const Logo: React.FC = () => {
   return (
     <Link to="/" className="flex items-center gap-2 text-primary">
       <Brain className="h-8 w-8" />
-      <span className="font-bold text-xl">RAGent</span>
+      <span className="font-bold text-xl">AI Curator</span>
     </Link>
   );
 };

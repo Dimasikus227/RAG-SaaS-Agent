@@ -19,7 +19,7 @@ interface UserButtonProps {
   };
 }
 
-export const UserButton: React.FC<UserButtonProps> = ({ user = { name: 'User', avatarUrl: '' } }) => {
+export const UserButton: React.FC<UserButtonProps> = ({ user = { name: 'Користувач', avatarUrl: '' } }) => {
   const navigate = useNavigate();
   const initials = user.name
     .split(' ')
@@ -40,11 +40,11 @@ export const UserButton: React.FC<UserButtonProps> = ({ user = { name: 'User', a
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => navigate('/profile')}>
           <User className="mr-2 h-4 w-4" />
-          <span>Profile</span>
+          <span>Профіль</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => navigate('/settings')}>
           <Settings className="mr-2 h-4 w-4" />
-          <span>Settings</span>
+          <span>Налаштування</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem 
@@ -55,7 +55,7 @@ export const UserButton: React.FC<UserButtonProps> = ({ user = { name: 'User', a
           }}
         >
           <LogOut className="mr-2 h-4 w-4" />
-          <span>Log out</span>
+          <span>Вийти</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

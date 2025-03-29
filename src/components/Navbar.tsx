@@ -3,6 +3,7 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { UserButton } from '@/components/UserButton';
 import { Logo } from '@/components/Logo';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { useNavigate } from 'react-router-dom';
 
 interface NavbarProps {
@@ -22,6 +23,8 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn, user }) => {
         <Logo />
         
         <div className="flex items-center gap-4">
+          <ThemeToggle />
+          
           {isLoggedIn ? (
             <UserButton user={user} />
           ) : (
@@ -30,12 +33,12 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn, user }) => {
                 variant="outline" 
                 onClick={() => navigate('/login')}
               >
-                Log in
+                Увійти
               </Button>
               <Button 
                 onClick={() => navigate('/signup')}
               >
-                Sign up
+                Зареєструватися
               </Button>
             </div>
           )}

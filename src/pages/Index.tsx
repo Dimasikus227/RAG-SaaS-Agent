@@ -10,7 +10,7 @@ const Index = () => {
   // This would come from your authentication state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const user = {
-    name: 'John Doe',
+    name: 'Іван Петренко',
     avatarUrl: '',
   };
 
@@ -25,11 +25,11 @@ const Index = () => {
               <TabsList>
                 <TabsTrigger value="chat" className="flex gap-2">
                   <MessageSquare className="h-4 w-4" />
-                  <span>Chat</span>
+                  <span>Чат</span>
                 </TabsTrigger>
                 <TabsTrigger value="subscribe" className="flex gap-2">
                   <CreditCard className="h-4 w-4" />
-                  <span>Subscription</span>
+                  <span>Підписка</span>
                 </TabsTrigger>
               </TabsList>
             </div>

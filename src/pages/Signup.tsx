@@ -6,8 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Logo } from '@/components/Logo';
-import { Separator } from '@/components/ui/separator';
-import { Github } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const Signup = () => {
@@ -26,8 +24,8 @@ const Signup = () => {
     setTimeout(() => {
       setIsLoading(false);
       toast({
-        title: "Account created",
-        description: "Welcome to RAGent! Your account has been created successfully.",
+        title: "Обліковий запис створено",
+        description: "Ласкаво просимо до AI Curator! Ваш обліковий запис було успішно створено.",
       });
       navigate('/');
     }, 1000);
@@ -42,16 +40,16 @@ const Signup = () => {
         
         <Card>
           <CardHeader>
-            <CardTitle>Create an account</CardTitle>
-            <CardDescription>Enter your details to create your account</CardDescription>
+            <CardTitle>Створити обліковий запис</CardTitle>
+            <CardDescription>Введіть ваші дані для створення облікового запису</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
+                <Label htmlFor="name">Повне ім'я</Label>
                 <Input
                   id="name"
-                  placeholder="John Doe"
+                  placeholder="Іван Петренко"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
@@ -71,7 +69,7 @@ const Signup = () => {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">Пароль</Label>
                 <Input
                   id="password"
                   type="password"
@@ -83,33 +81,22 @@ const Signup = () => {
               </div>
               
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Creating account..." : "Sign up"}
+                {isLoading ? "Створення облікового запису..." : "Зареєструватися"}
               </Button>
               
               <p className="text-xs text-center text-muted-foreground">
-                By clicking "Sign up", you agree to our{" "}
-                <Link to="/terms" className="text-primary hover:underline">Terms of Service</Link>
-                {" "}and{" "}
-                <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>.
+                Натискаючи "Зареєструватися", ви погоджуєтеся з нашими{" "}
+                <Link to="/terms" className="text-primary hover:underline">Умовами користування</Link>
+                {" "}та{" "}
+                <Link to="/privacy" className="text-primary hover:underline">Політикою конфіденційності</Link>.
               </p>
             </form>
-            
-            <div className="mt-4 flex items-center">
-              <Separator className="flex-1" />
-              <span className="mx-2 text-xs text-muted-foreground">OR</span>
-              <Separator className="flex-1" />
-            </div>
-            
-            <Button variant="outline" className="w-full mt-4 gap-2">
-              <Github className="h-4 w-4" />
-              Continue with GitHub
-            </Button>
           </CardContent>
           <CardFooter className="flex justify-center">
             <p className="text-sm text-muted-foreground">
-              Already have an account?{" "}
+              Вже маєте обліковий запис?{" "}
               <Link to="/login" className="text-primary hover:underline">
-                Log in
+                Увійти
               </Link>
             </p>
           </CardFooter>

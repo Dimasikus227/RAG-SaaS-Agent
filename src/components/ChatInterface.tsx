@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SendHorizonal, Bot, User, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 interface Message {
   id: string;
@@ -12,11 +13,20 @@ interface Message {
   timestamp: Date;
 }
 
+interface N8nResponse {
+  message: string;
+  error?: string;
+}
+
+// This would come from environment variables in a real app
+const N8N_WORKFLOW_URL = 'YOUR_N8N_WORKFLOW_URL';
+
 export const ChatInterface: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -26,7 +36,48 @@ export const ChatInterface: React.FC = () => {
     scrollToBottom();
   }, [messages]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const sendToN8n = async (userQuery: string): Promise<string> => {
+    try {
+      // In a real app, you'd make a proper API request to your n8n workflow
+      // For now, we'll simulate a response
+      console.log('Sending to n8n:', userQuery);
+      
+      // Simulate API call
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          resolve(`Ось відповідь на ваш запит про "${userQuery}" з моєї бази даних. Я AI Curator і допомагаю знаходити потрібну інформацію.`);
+        }, 1500);
+      });
+      
+      // In production, you'd use something like this:
+      /*
+      const response = await fetch(N8N_WORKFLOW_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query: userQuery }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data: N8nResponse = await response.json();
+      
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      
+      return data.message;
+      */
+    } catch (error) {
+      console.error('Error calling n8n workflow:', error);
+      throw error;
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
 
@@ -41,17 +92,28 @@ export const ChatInterface: React.FC = () => {
     setInput('');
     setIsLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
+    try {
+      // Get response from n8n workflow
+      const n8nResponse = await sendToN8n(userMessage.content);
+      
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: "I'm your AI assistant powered by RAG technology. I can provide answers based on the data stored in the vector database. How can I help you today?",
+        content: n8nResponse,
         role: 'assistant',
         timestamp: new Date(),
       };
+      
       setMessages(prev => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Помилка",
+        description: "Не вдалося отримати відповідь. Спробуйте ще раз пізніше.",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -60,9 +122,9 @@ export const ChatInterface: React.FC = () => {
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center p-4">
             <Bot className="h-16 w-16 text-muted-foreground mb-4" />
-            <h2 className="text-2xl font-semibold mb-2">Welcome to RAGent</h2>
+            <h2 className="text-2xl font-semibold mb-2">Вітаємо в AI Curator</h2>
             <p className="text-muted-foreground max-w-md">
-              Ask me anything, and I'll provide answers based on data from our vector database. I'm powered by RAG technology!
+              Запитайте мене про будь-що, і я надам відповіді на основі даних з нашої векторної бази даних. Я працюю на технології RAG!
             </p>
           </div>
         ) : (
@@ -105,7 +167,7 @@ export const ChatInterface: React.FC = () => {
       <div className="border-t p-4">
         <form onSubmit={handleSubmit} className="flex gap-2 max-w-3xl mx-auto">
           <Input
-            placeholder="Type your message..."
+            placeholder="Введіть ваше повідомлення..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
             className="flex-1"

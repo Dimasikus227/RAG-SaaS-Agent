@@ -6,8 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Logo } from '@/components/Logo';
-import { Separator } from '@/components/ui/separator';
-import { Github } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const Login = () => {
@@ -25,8 +23,8 @@ const Login = () => {
     setTimeout(() => {
       setIsLoading(false);
       toast({
-        title: "Login successful",
-        description: "Welcome back to RAGent!",
+        title: "Вхід успішний",
+        description: "Ласкаво просимо до AI Curator!",
       });
       navigate('/');
     }, 1000);
@@ -41,8 +39,8 @@ const Login = () => {
         
         <Card>
           <CardHeader>
-            <CardTitle>Log in</CardTitle>
-            <CardDescription>Enter your credentials to access your account</CardDescription>
+            <CardTitle>Увійти</CardTitle>
+            <CardDescription>Введіть ваші дані для входу в обліковий запис</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -60,9 +58,9 @@ const Login = () => {
               
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">Пароль</Label>
                   <Link to="/forgot-password" className="text-xs text-primary hover:underline">
-                    Forgot password?
+                    Забули пароль?
                   </Link>
                 </div>
                 <Input
@@ -76,26 +74,15 @@ const Login = () => {
               </div>
               
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Logging in..." : "Log in"}
+                {isLoading ? "Вхід..." : "Увійти"}
               </Button>
             </form>
-            
-            <div className="mt-4 flex items-center">
-              <Separator className="flex-1" />
-              <span className="mx-2 text-xs text-muted-foreground">OR</span>
-              <Separator className="flex-1" />
-            </div>
-            
-            <Button variant="outline" className="w-full mt-4 gap-2">
-              <Github className="h-4 w-4" />
-              Continue with GitHub
-            </Button>
           </CardContent>
           <CardFooter className="flex justify-center">
             <p className="text-sm text-muted-foreground">
-              Don't have an account?{" "}
+              Немає облікового запису?{" "}
               <Link to="/signup" className="text-primary hover:underline">
-                Sign up
+                Зареєструватися
               </Link>
             </p>
           </CardFooter>

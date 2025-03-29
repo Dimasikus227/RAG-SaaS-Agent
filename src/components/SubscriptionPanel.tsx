@@ -25,50 +25,35 @@ interface Plan {
 
 const plans: Plan[] = [
   {
-    name: 'Free',
-    description: 'Basic access to the AI assistant',
+    name: 'Стандарт',
+    description: 'Базовий доступ до AI помічника',
     price: {
-      monthly: 0,
-      yearly: 0,
+      monthly: 9,
+      yearly: 90,
     },
     features: [
-      { text: '10 queries per day', included: true },
-      { text: 'Basic response quality', included: true },
-      { text: 'Community support', included: true },
-      { text: 'Advanced data retrieval', included: false },
-      { text: 'Priority response', included: false },
+      { text: '100 запитів на день', included: true },
+      { text: 'Стандартна якість відповідей', included: true },
+      { text: 'Підтримка спільноти', included: true },
+      { text: 'Розширений пошук даних', included: false },
+      { text: 'Пріоритетні відповіді', included: false },
     ],
   },
   {
-    name: 'Pro',
-    description: 'Enhanced features for power users',
+    name: 'Про',
+    description: 'Розширені функції для професіоналів',
     price: {
-      monthly: 12,
-      yearly: 120,
+      monthly: 29,
+      yearly: 290,
     },
     features: [
-      { text: 'Unlimited queries', included: true },
-      { text: 'Enhanced response quality', included: true },
-      { text: 'Priority support', included: true },
-      { text: 'Advanced data retrieval', included: true },
-      { text: 'Priority response', included: true },
+      { text: 'Необмежені запити', included: true },
+      { text: 'Покращена якість відповідей', included: true },
+      { text: 'Пріоритетна підтримка', included: true },
+      { text: 'Розширений пошук даних', included: true },
+      { text: 'Пріоритетні відповіді', included: true },
     ],
     highlight: true,
-  },
-  {
-    name: 'Enterprise',
-    description: 'Custom solutions for organizations',
-    price: {
-      monthly: 49,
-      yearly: 490,
-    },
-    features: [
-      { text: 'Unlimited queries', included: true },
-      { text: 'Premium response quality', included: true },
-      { text: 'Dedicated support', included: true },
-      { text: 'Custom data integration', included: true },
-      { text: 'API access', included: true },
-    ],
   },
 ];
 
@@ -78,9 +63,9 @@ export const SubscriptionPanel: React.FC = () => {
   return (
     <div className="container max-w-6xl py-8">
       <div className="text-center mb-10">
-        <h2 className="text-3xl font-bold mb-2">Choose Your Plan</h2>
+        <h2 className="text-3xl font-bold mb-2">Оберіть свій план</h2>
         <p className="text-muted-foreground">
-          Select the plan that best fits your needs
+          Виберіть план, який найкраще відповідає вашим потребам
         </p>
         
         <div className="flex items-center justify-center mt-6 space-x-4">
@@ -89,22 +74,22 @@ export const SubscriptionPanel: React.FC = () => {
             onClick={() => setBillingInterval('monthly')}
             className="gap-2"
           >
-            Monthly
+            Щомісячно
           </Button>
           <Button
             variant={billingInterval === 'yearly' ? 'default' : 'outline'}
             onClick={() => setBillingInterval('yearly')}
             className="gap-2"
           >
-            Yearly
+            Щорічно
             <span className="bg-primary-foreground text-primary rounded-full text-xs px-2 py-0.5">
-              Save 20%
+              Економія 20%
             </span>
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
         {plans.map((plan) => (
           <Card
             key={plan.name}
@@ -119,7 +104,7 @@ export const SubscriptionPanel: React.FC = () => {
                 {plan.highlight && (
                   <span className="bg-primary/10 text-primary text-xs rounded-full px-2 py-1 flex items-center">
                     <Sparkles className="h-3 w-3 mr-1" />
-                    Popular
+                    Популярний
                   </span>
                 )}
               </CardTitle>
@@ -131,7 +116,7 @@ export const SubscriptionPanel: React.FC = () => {
                   ${billingInterval === 'monthly' ? plan.price.monthly : plan.price.yearly}
                 </span>
                 <span className="text-muted-foreground ml-1">
-                  /{billingInterval === 'monthly' ? 'month' : 'year'}
+                  /{billingInterval === 'monthly' ? 'місяць' : 'рік'}
                 </span>
               </div>
               
@@ -156,7 +141,7 @@ export const SubscriptionPanel: React.FC = () => {
                 className="w-full"
                 variant={plan.highlight ? "default" : "outline"}
               >
-                {plan.price.monthly === 0 ? "Get Started" : "Subscribe"}
+                {plan.price.monthly === 0 ? "Почати" : "Підписатися"}
               </Button>
             </CardFooter>
           </Card>
