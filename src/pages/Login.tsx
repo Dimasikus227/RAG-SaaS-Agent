@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from "@/components/ui/label";
 import { Logo } from '@/components/Logo';
 import { useToast } from '@/hooks/use-toast';
-import { authenticateUser } from '@/services/supabase';
+import { supabase } from '@/services/supabase';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -16,35 +16,40 @@ const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  useEffect(() => {
+    // Check if user is already logged in
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        navigate('/');
+      }
+    });
+  }, [navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
     try {
-      const user = await authenticateUser(email, password);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
       
-      if (user) {
-        // Store user info in localStorage for session management
-        localStorage.setItem('user', JSON.stringify(user));
-        
+      if (error) throw error;
+      
+      if (data.user) {
         toast({
           title: "Вхід успішний",
           description: "Ласкаво просимо до AI Curator!",
         });
         
         navigate('/');
-      } else {
-        toast({
-          title: "Помилка входу",
-          description: "Невірний email або пароль. Спробуйте ще раз.",
-          variant: "destructive",
-        });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
       toast({
         title: "Помилка входу",
-        description: "Сталася помилка під час входу. Спробуйте пізніше.",
+        description: error.message || "Невірний email або пароль. Спробуйте ще раз.",
         variant: "destructive",
       });
     } finally {

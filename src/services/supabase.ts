@@ -1,11 +1,17 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase client with your project URL and service role key
+// Initialize Supabase client with your project URL and anon key
 const supabaseUrl = 'https://zvyldmazpktevdxeaavq.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp2eWxkbWF6cGt0ZXZkeGVhYXZxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MjgyNTcxNCwiZXhwIjoyMDU4NDAxNzE0fQ.TF20bNN5S0ChNB-KdcUPFkjUIaQ97e3whaxI3TUBftw';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp2eWxkbWF6cGt0ZXZkeGVhYXZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI4MjU3MTQsImV4cCI6MjA1ODQwMTcxNH0.imdsb6IJfScPYjn1W_NB4B4HJkdx5s9ABgsFaPPKQOc';
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    storage: localStorage,
+    persistSession: true,
+    autoRefreshToken: true,
+  }
+});
 
 interface User {
   id: string;
@@ -68,26 +74,16 @@ export const registerUser = async (name: string, email: string, password: string
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          name: name,
+        }
+      }
     });
 
     if (error) throw error;
 
     if (data.user) {
-      // Create a profile for the new user
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert([
-          { 
-            id: data.user.id, 
-            name, 
-            email,
-            role: 'standard',
-            created_at: new Date(),
-          }
-        ]);
-
-      if (profileError) throw profileError;
-
       return {
         id: data.user.id,
         email: data.user.email || '',
@@ -100,6 +96,20 @@ export const registerUser = async (name: string, email: string, password: string
   } catch (error) {
     console.error('Registration error:', error);
     return null;
+  }
+};
+
+export const signOut = async (): Promise<boolean> => {
+  try {
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+    
+    // Clear local storage
+    localStorage.removeItem('user');
+    return true;
+  } catch (error) {
+    console.error('Error signing out:', error);
+    return false;
   }
 };
 

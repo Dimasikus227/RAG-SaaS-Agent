@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { SendHorizonal, Bot, User, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { saveUserQuery } from '@/services/supabase';
+import { supabase } from '@/services/supabase';
 
 interface Message {
   id: string;
@@ -48,35 +48,46 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userId }) => {
     if (userId) {
       const loadChatHistory = async () => {
         try {
-          const { getUserQueries } = await import('@/services/supabase');
-          const userQueries = await getUserQueries(userId);
+          console.log('Loading chat history for user:', userId);
+          const { data, error } = await supabase
+            .from('queries')
+            .select('query, response, created_at')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: true });
+            
+          if (error) {
+            console.error('Error loading queries:', error);
+            return;
+          }
           
-          if (userQueries.length > 0) {
+          if (data && data.length > 0) {
+            console.log('Chat history loaded:', data.length, 'messages');
             const loadedMessages: Message[] = [];
             
             // Convert queries to messages format (both user and assistant messages)
-            userQueries.forEach(query => {
+            data.forEach(query => {
+              const timestamp = new Date(query.created_at);
+              
               // Add user message
               loadedMessages.push({
-                id: `user-${query.timestamp.getTime()}`,
+                id: `user-${timestamp.getTime()}`,
                 content: query.query,
                 role: 'user',
-                timestamp: query.timestamp
+                timestamp: timestamp
               });
               
               // Add assistant message
               loadedMessages.push({
-                id: `assistant-${query.timestamp.getTime()}`,
+                id: `assistant-${timestamp.getTime() + 1}`,
                 content: query.response,
                 role: 'assistant',
-                timestamp: query.timestamp
+                timestamp: new Date(timestamp.getTime() + 1) // Add 1ms to ensure correct order
               });
             });
             
-            // Sort messages by timestamp
-            loadedMessages.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
-            
             setMessages(loadedMessages);
+          } else {
+            console.log('No chat history found');
           }
         } catch (error) {
           console.error('Error loading chat history:', error);
@@ -107,26 +118,24 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userId }) => {
       const responseText = await response.text();
       console.log('Raw response from n8n:', responseText);
       
-      let responseData: N8nResponse;
-      
       try {
         // Try to parse as JSON
-        responseData = JSON.parse(responseText);
+        const responseData: N8nResponse = JSON.parse(responseText);
+        
+        // Check all possible response formats
+        if (responseData.output) {
+          return responseData.output;
+        } else if (responseData.message) {
+          return responseData.message;
+        } else if (responseData.error) {
+          throw new Error(responseData.error);
+        } else if (typeof responseData === 'string') {
+          return responseData;
+        }
       } catch (e) {
         // If it's not valid JSON, use the raw text as the message
         console.log('Response is not valid JSON, using as raw text');
         return responseText;
-      }
-      
-      // Check all possible response formats
-      if (responseData.output) {
-        return responseData.output;
-      } else if (responseData.message) {
-        return responseData.message;
-      } else if (responseData.error) {
-        throw new Error(responseData.error);
-      } else if (typeof responseData === 'string') {
-        return responseData;
       }
       
       return 'Нема відповіді від сервера.';
@@ -147,7 +156,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userId }) => {
       role: 'user',
       timestamp: new Date(),
     };
-    setMessages([...messages, userMessage]);
+    setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
 
@@ -166,7 +175,28 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userId }) => {
       
       // Save the query to Supabase if a user is logged in
       if (userId) {
-        await saveUserQuery(userId, userMessage.content, n8nResponse);
+        console.log('Saving chat to database for user:', userId);
+        const { error } = await supabase
+          .from('queries')
+          .insert([
+            { 
+              user_id: userId, 
+              query: userMessage.content, 
+              response: n8nResponse,
+              created_at: new Date().toISOString()
+            }
+          ]);
+          
+        if (error) {
+          console.error('Error saving query:', error);
+          toast({
+            title: "Помилка",
+            description: "Не вдалося зберегти запит. " + error.message,
+            variant: "destructive",
+          });
+        }
+      } else {
+        console.log('User not logged in, skipping save to database');
       }
     } catch (error) {
       console.error('Error:', error);

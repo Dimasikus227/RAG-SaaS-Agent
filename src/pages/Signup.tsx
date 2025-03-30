@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from "@/components/ui/label";
 import { Logo } from '@/components/Logo';
 import { useToast } from '@/hooks/use-toast';
-import { registerUser } from '@/services/supabase';
+import { supabase } from '@/services/supabase';
 
 const Signup = () => {
   const [name, setName] = useState('');
@@ -17,14 +17,33 @@ const Signup = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  useEffect(() => {
+    // Check if user is already logged in
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        navigate('/');
+      }
+    });
+  }, [navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
     try {
-      const user = await registerUser(name, email, password);
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name: name,
+          }
+        }
+      });
       
-      if (user) {
+      if (error) throw error;
+      
+      if (data.user) {
         toast({
           title: "Обліковий запис створено",
           description: "Ласкаво просимо до AI Curator! Ваш обліковий запис було успішно створено.",
@@ -32,18 +51,12 @@ const Signup = () => {
         
         // Navigate to login instead of auto-login to comply with email verification if enabled
         navigate('/login');
-      } else {
-        toast({
-          title: "Помилка реєстрації",
-          description: "Не вдалося створити обліковий запис. Можливо, цей email вже використовується.",
-          variant: "destructive",
-        });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Registration error:', error);
       toast({
         title: "Помилка реєстрації",
-        description: "Сталася помилка під час створення облікового запису. Спробуйте пізніше.",
+        description: error.message || "Не вдалося створити обліковий запис. Можливо, цей email вже використовується.",
         variant: "destructive",
       });
     } finally {

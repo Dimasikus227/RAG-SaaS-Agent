@@ -11,6 +11,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogOut, Settings, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/services/supabase';
+import { useToast } from '@/hooks/use-toast';
 
 interface UserButtonProps {
   user?: {
@@ -21,11 +23,33 @@ interface UserButtonProps {
 
 export const UserButton: React.FC<UserButtonProps> = ({ user = { name: 'Користувач', avatarUrl: '' } }) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const initials = user.name
     .split(' ')
     .map((n) => n[0])
     .join('')
     .toUpperCase();
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      localStorage.removeItem('user');
+      
+      toast({
+        title: "Вихід успішний",
+        description: "Ви вийшли з облікового запису.",
+      });
+      
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast({
+        title: "Помилка виходу",
+        description: "Сталася помилка під час виходу. Спробуйте ще раз.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <DropdownMenu>
@@ -49,10 +73,7 @@ export const UserButton: React.FC<UserButtonProps> = ({ user = { name: 'Кори
         <DropdownMenuSeparator />
         <DropdownMenuItem 
           className="text-destructive focus:text-destructive" 
-          onClick={() => {
-            // Handle logout here
-            navigate('/login');
-          }}
+          onClick={handleLogout}
         >
           <LogOut className="mr-2 h-4 w-4" />
           <span>Вийти</span>
