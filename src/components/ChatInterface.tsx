@@ -21,8 +21,8 @@ interface N8nResponse {
   error?: string;
 }
 
-// n8n webhook URL
-const N8N_WEBHOOK_URL = 'https://hudii.app.n8n.cloud/webhook-test/4efc0770-91b6-4e97-9847-8f40d67e31d8';
+// Updated n8n webhook URL
+const N8N_WEBHOOK_URL = 'https://hudii.app.n8n.cloud/webhook/4efc0770-91b6-4e97-9847-8f40d67e31d8';
 
 interface ChatInterfaceProps {
   userId?: string;
@@ -42,6 +42,50 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userId }) => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Fetch user's chat history if they are logged in
+  useEffect(() => {
+    if (userId) {
+      const loadChatHistory = async () => {
+        try {
+          const { getUserQueries } = await import('@/services/supabase');
+          const userQueries = await getUserQueries(userId);
+          
+          if (userQueries.length > 0) {
+            const loadedMessages: Message[] = [];
+            
+            // Convert queries to messages format (both user and assistant messages)
+            userQueries.forEach(query => {
+              // Add user message
+              loadedMessages.push({
+                id: `user-${query.timestamp.getTime()}`,
+                content: query.query,
+                role: 'user',
+                timestamp: query.timestamp
+              });
+              
+              // Add assistant message
+              loadedMessages.push({
+                id: `assistant-${query.timestamp.getTime()}`,
+                content: query.response,
+                role: 'assistant',
+                timestamp: query.timestamp
+              });
+            });
+            
+            // Sort messages by timestamp
+            loadedMessages.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+            
+            setMessages(loadedMessages);
+          }
+        } catch (error) {
+          console.error('Error loading chat history:', error);
+        }
+      };
+      
+      loadChatHistory();
+    }
+  }, [userId]);
 
   const sendToN8n = async (userQuery: string): Promise<string> => {
     try {
