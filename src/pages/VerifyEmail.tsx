@@ -5,69 +5,112 @@ import { Button } from "@/components/ui/button";
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const VerifyEmail = () => {
   const [verificationStatus, setVerificationStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
+  const { toast } = useToast();
 
   useEffect(() => {
     const verifyEmail = async () => {
       try {
-        // Extract token and type from the URL
-        const params = new URLSearchParams(location.hash.substring(1));
-        const accessToken = params.get('access_token');
-        const tokenType = params.get('token_type');
-        const type = params.get('type');
+        // First check if we have hash parameters from the URL
+        if (location.hash) {
+          // Extract token and type from the URL hash
+          const params = new URLSearchParams(location.hash.substring(1));
+          const accessToken = params.get('access_token');
+          const refreshToken = params.get('refresh_token');
+          const type = params.get('type');
 
-        if (!accessToken || !tokenType || type !== 'email_change' && type !== 'signup') {
-          console.error('Invalid verification parameters');
-          setVerificationStatus('error');
-          setErrorMessage('Неправильні параметри верифікації. Перевірте URL.');
-          return;
-        }
+          if (!accessToken) {
+            console.error('Invalid verification parameters');
+            setVerificationStatus('error');
+            setErrorMessage('Неправильні параметри верифікації. Перевірте URL.');
+            return;
+          }
 
-        // Set the access token in the supabase client
-        const { error } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: '',
-        });
+          // Set the access token in the supabase client
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken || '',
+          });
 
-        if (error) {
-          console.error('Error setting session:', error);
-          setVerificationStatus('error');
-          setErrorMessage(error.message);
-          return;
-        }
+          if (error) {
+            console.error('Error setting session:', error);
+            setVerificationStatus('error');
+            setErrorMessage(error.message);
+            return;
+          }
 
-        // Check the current session to confirm verification
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session) {
-          setVerificationStatus('success');
+          // Check the current session to confirm verification
+          const { data: { session } } = await supabase.auth.getSession();
           
-          // Store user data in localStorage for persistence
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('name, role, avatar_url')
-            .eq('id', session.user.id)
-            .single();
+          if (session) {
+            setVerificationStatus('success');
             
-          if (!profileError && profileData) {
-            const userData = {
-              id: session.user.id,
-              email: session.user.email,
-              name: profileData.name || 'Користувач',
-              role: profileData.role || 'standard',
-              avatarUrl: profileData.avatar_url,
-            };
-            
-            localStorage.setItem('user', JSON.stringify(userData));
+            // Store user data in localStorage for persistence
+            const { data: profileData, error: profileError } = await supabase
+              .from('profiles')
+              .select('name, role, avatar_url')
+              .eq('id', session.user.id)
+              .single();
+              
+            if (!profileError && profileData) {
+              const userData = {
+                id: session.user.id,
+                email: session.user.email,
+                name: profileData.name || 'Користувач',
+                role: profileData.role || 'standard',
+                avatarUrl: profileData.avatar_url,
+              };
+              
+              localStorage.setItem('user', JSON.stringify(userData));
+            }
+
+            toast({
+              title: "Електронну пошту підтверджено",
+              description: "Ваш обліковий запис тепер активовано.",
+            });
+          } else {
+            setVerificationStatus('error');
+            setErrorMessage('Не вдалося підтвердити вашу електронну пошту. Спробуйте ще раз.');
           }
         } else {
-          setVerificationStatus('error');
-          setErrorMessage('Не вдалося підтвердити вашу електронну пошту. Спробуйте ще раз.');
+          // Check if we have query parameters instead
+          const params = new URLSearchParams(location.search);
+          const token = params.get('token');
+          const type = params.get('type');
+          
+          if (token && type === 'recovery') {
+            // This is a password reset flow
+            setVerificationStatus('success');
+            // You can handle password reset here if needed
+          } else if (token && type === 'signup') {
+            // This is an email confirmation flow using query parameters
+            const { error } = await supabase.auth.verifyOtp({
+              token_hash: token,
+              type: 'signup',
+            });
+
+            if (error) {
+              console.error('Error verifying email:', error);
+              setVerificationStatus('error');
+              setErrorMessage(error.message);
+            } else {
+              setVerificationStatus('success');
+              toast({
+                title: "Електронну пошту підтверджено",
+                description: "Ваш обліковий запис тепер активовано.",
+              });
+            }
+          } else {
+            // No verification parameters found
+            setVerificationStatus('error');
+            setErrorMessage('Не знайдено параметрів верифікації в URL.');
+          }
         }
       } catch (error) {
         console.error('Verification error:', error);
@@ -77,7 +120,7 @@ const VerifyEmail = () => {
     };
 
     verifyEmail();
-  }, [location.hash, navigate]);
+  }, [location.hash, location.search, navigate, toast]);
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">

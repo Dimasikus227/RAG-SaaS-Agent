@@ -93,6 +93,30 @@ export type Database = {
         }
         Relationships: []
       }
+      queries: {
+        Row: {
+          created_at: string
+          id: string
+          query: string
+          response: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          query: string
+          response: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          query?: string
+          response?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
