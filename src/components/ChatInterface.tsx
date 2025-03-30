@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { SendHorizonal, Bot, User, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/services/supabase';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Message {
   id: string;
@@ -32,6 +32,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userId }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -48,6 +49,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userId }) => {
     if (userId) {
       const loadChatHistory = async () => {
         try {
+          setIsLoadingHistory(true);
           console.log('Loading chat history for user:', userId);
           const { data, error } = await supabase
             .from('queries')
@@ -57,6 +59,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userId }) => {
             
           if (error) {
             console.error('Error loading queries:', error);
+            toast({
+              title: "Помилка завантаження історії",
+              description: "Не вдалося завантажити історію чату. " + error.message,
+              variant: "destructive",
+            });
             return;
           }
           
@@ -88,15 +95,26 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userId }) => {
             setMessages(loadedMessages);
           } else {
             console.log('No chat history found');
+            setMessages([]);
           }
         } catch (error) {
           console.error('Error loading chat history:', error);
+          toast({
+            title: "Помилка",
+            description: "Сталася помилка під час завантаження історії чату.",
+            variant: "destructive",
+          });
+        } finally {
+          setIsLoadingHistory(false);
         }
       };
       
       loadChatHistory();
+    } else {
+      setIsLoadingHistory(false);
+      setMessages([]);
     }
-  }, [userId]);
+  }, [userId, toast]);
 
   const sendToN8n = async (userQuery: string): Promise<string> => {
     try {
@@ -213,7 +231,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userId }) => {
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.length === 0 ? (
+        {isLoadingHistory ? (
+          <div className="h-full flex flex-col items-center justify-center text-center p-4">
+            <Loader2 className="h-8 w-8 text-primary animate-spin mb-4" />
+            <p className="text-muted-foreground">Завантаження історії чату...</p>
+          </div>
+        ) : messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center p-4">
             <Bot className="h-16 w-16 text-muted-foreground mb-4" />
             <h2 className="text-2xl font-semibold mb-2">Вітаємо в AI Curator</h2>
