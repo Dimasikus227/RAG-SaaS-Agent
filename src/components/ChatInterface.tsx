@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,14 +13,12 @@ interface Message {
   timestamp: Date;
 }
 
-// Updated interface to match the actual response format from n8n
 interface N8nResponse {
   output?: string;
   message?: string;
   error?: string;
 }
 
-// Updated n8n webhook URL
 const N8N_WEBHOOK_URL = 'https://hudii.app.n8n.cloud/webhook/4efc0770-91b6-4e97-9847-8f40d67e31d8';
 
 interface ChatInterfaceProps {
@@ -44,7 +41,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userId }) => {
     scrollToBottom();
   }, [messages]);
 
-  // Fetch user's chat history if they are logged in
   useEffect(() => {
     if (userId) {
       const loadChatHistory = async () => {
@@ -71,11 +67,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userId }) => {
             console.log('Chat history loaded:', data.length, 'messages');
             const loadedMessages: Message[] = [];
             
-            // Convert queries to messages format (both user and assistant messages)
             data.forEach(query => {
               const timestamp = new Date(query.created_at);
               
-              // Add user message
               loadedMessages.push({
                 id: `user-${timestamp.getTime()}`,
                 content: query.query,
@@ -83,12 +77,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userId }) => {
                 timestamp: timestamp
               });
               
-              // Add assistant message
               loadedMessages.push({
                 id: `assistant-${timestamp.getTime() + 1}`,
                 content: query.response,
                 role: 'assistant',
-                timestamp: new Date(timestamp.getTime() + 1) // Add 1ms to ensure correct order
+                timestamp: new Date(timestamp.getTime() + 1)
               });
             });
             
@@ -132,15 +125,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userId }) => {
         throw new Error(`HTTP помилка! статус: ${response.status}`);
       }
       
-      // Get the response text first to check what we're dealing with
       const responseText = await response.text();
       console.log('Raw response from n8n:', responseText);
       
       try {
-        // Try to parse as JSON
         const responseData: N8nResponse = JSON.parse(responseText);
         
-        // Check all possible response formats
         if (responseData.output) {
           return responseData.output;
         } else if (responseData.message) {
@@ -151,7 +141,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userId }) => {
           return responseData;
         }
       } catch (e) {
-        // If it's not valid JSON, use the raw text as the message
         console.log('Response is not valid JSON, using as raw text');
         return responseText;
       }
@@ -167,7 +156,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userId }) => {
     e.preventDefault();
     if (!input.trim()) return;
 
-    // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
       content: input.trim(),
@@ -179,7 +167,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userId }) => {
     setIsLoading(true);
 
     try {
-      // Get response from n8n workflow
       const n8nResponse = await sendToN8n(userMessage.content);
       
       const assistantMessage: Message = {
@@ -191,7 +178,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userId }) => {
       
       setMessages(prev => [...prev, assistantMessage]);
       
-      // Save the query to Supabase if a user is logged in
       if (userId) {
         console.log('Saving chat to database for user:', userId);
         const { error } = await supabase
@@ -239,9 +225,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userId }) => {
         ) : messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center p-4">
             <Bot className="h-16 w-16 text-muted-foreground mb-4" />
-            <h2 className="text-2xl font-semibold mb-2">Вітаємо в AI Curator</h2>
+            <h2 className="text-2xl font-semibold mb-2">AI куратор від Qndriy Education</h2>
             <p className="text-muted-foreground max-w-md">
-              Запитайте мене про будь-що, і я надам відповіді на основі даних з нашої векторної бази даних. Я працюю на технології RAG!
+              Запитай в мене про будь-що про YouTube!
             </p>
           </div>
         ) : (

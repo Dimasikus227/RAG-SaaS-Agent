@@ -2,9 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { ChatInterface } from '@/components/ChatInterface';
-import { SubscriptionPanel } from '@/components/SubscriptionPanel';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MessageSquare, CreditCard } from 'lucide-react';
 import { supabase } from "@/services/supabase";
 import { Session } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
@@ -129,9 +126,6 @@ const Index = () => {
     }
   };
 
-  // Default to "subscribe" tab for non-authenticated users
-  const defaultTab = isLoggedIn ? "chat" : "subscribe";
-
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar 
@@ -144,28 +138,9 @@ const Index = () => {
       
       <main className="flex-1 mt-16 pb-4">
         <div className="container mx-auto max-w-7xl h-full">
-          <Tabs defaultValue={defaultTab} className="h-full">
-            <div className="flex justify-center mb-4">
-              <TabsList>
-                <TabsTrigger value="chat" className="flex gap-2">
-                  <MessageSquare className="h-4 w-4" />
-                  <span>Чат</span>
-                </TabsTrigger>
-                <TabsTrigger value="subscribe" className="flex gap-2">
-                  <CreditCard className="h-4 w-4" />
-                  <span>Підписка</span>
-                </TabsTrigger>
-              </TabsList>
-            </div>
-            
-            <TabsContent value="chat" className="h-[calc(100vh-136px)]">
-              <ChatInterface userId={user?.id} />
-            </TabsContent>
-            
-            <TabsContent value="subscribe">
-              <SubscriptionPanel />
-            </TabsContent>
-          </Tabs>
+          <div className="h-[calc(100vh-136px)]">
+            <ChatInterface userId={user?.id} />
+          </div>
         </div>
       </main>
     </div>
