@@ -19,7 +19,7 @@ interface N8nResponse {
   error?: string;
 }
 
-const N8N_WEBHOOK_URL = 'http://localhost:5678/webhook/4efc0770-91b6-4e97-9847-8f40d67e31d8';
+const N8N_WEBHOOK_URL = 'http://localhost:5678/webhook-test/4efc0770-91b6-4e97-9847-8f40d67e31d8';
 
 interface ChatInterfaceProps {
   userId?: string;
