@@ -198,7 +198,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             <p className="text-muted-foreground">Завантаження історії чату...</p>
           </div> : messages.length === 0 ? <div className="h-full flex flex-col items-center justify-center text-center p-4">
             <Bot className="h-16 w-16 text-muted-foreground mb-4" />
-            <h2 className="text-2xl font-semibold mb-2">AI куратор</h2>
+            <h2 className="text-2xl font-semibold mb-2">AI куратор Що там YouTube</h2>
             <p className="text-muted-foreground max-w-md">
               Запитай в мене про будь-що про YouTube!
             </p>
