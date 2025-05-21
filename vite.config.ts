@@ -1,23 +1,20 @@
 import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react-swc";
-import path from "path";
-import { componentTagger } from "lovable-tagger";
+import react from "@vitejs/plugin-react";
 
-// https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
-  base: '/RAG-SaaS-Agent/',
+export default defineConfig({
+  base: "/RAG-SaaS-Agent/",
+  plugins: [
+    react({
+      fastRefresh: false, // вимикаємо, щоб уникнути eval і CSP проблем
+    }),
+  ],
   server: {
     host: "::",
     port: 8080,
   },
-  plugins: [
-    react(),
-    mode === 'development' &&
-    componentTagger(),
-  ].filter(Boolean),
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": "/src",
     },
   },
-}));
+});
