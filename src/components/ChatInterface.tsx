@@ -17,7 +17,7 @@ interface N8nResponse {
   message?: string;
   error?: string;
 }
-const N8N_WEBHOOK_URL = 'https://dimonn2007.app.n8n.cloud/webhook/4efc0770-91b6-4e97-9847-8f40d67e31d8';
+const N8N_WEBHOOK_URL = 'https://dimonn2007.app.n8n.cloud/webhook-test/4efc0770-91b6-4e97-9847-8f40d67e31d8';
 interface ChatInterfaceProps {
   userId?: string;
 }
